@@ -2,6 +2,9 @@ import { DATA, STREETS, LBL, events, split, fmtD, isoD, addDays, TIMES, buildICS
 const ZCOL={1:'#2f8f4e',2:'#2563a8',3:'#e0b100',4:'#e46aa0'};
 const ZNAME={1:'Verde',2:'Blu',3:'Gialla',4:'Rosa'};
 const $=id=>document.getElementById(id);
+const isIOS=/iphone|ipad|ipod/i.test(navigator.userAgent)||(navigator.platform==='MacIntel'&&navigator.maxTouchPoints>1);
+const standalone=matchMedia('(display-mode: standalone)').matches||navigator.standalone===true;
+let pushBlocked=false;
 const KEY='rifiuti-trissino';
 let st={zone:null,time:'20:00',xtra:false};
 try{Object.assign(st,JSON.parse(localStorage.getItem(KEY)||'{}'))}catch(e){}
@@ -28,7 +31,8 @@ function renderList(){
 }
 function render(){
   renderZones();renderList();$('t').value=st.time;$('xtra').checked=st.xtra;
-  for(const id of ['dl','pon']){$(id).disabled=!st.zone;$(id).style.opacity=st.zone?1:.5}
+  for(const id of ['dl','pon']){const off=!st.zone||(id==='pon'&&pushBlocked);$(id).disabled=off;$(id).style.opacity=off?.5:1}
+  $('iosWelcome').classList.toggle('hidden',!(isIOS&&standalone&&!st.zone));
 }
 function changed(){save();render();$('msg').textContent='';syncPush()}
 $('t').onchange=e=>{st.time=e.target.value;changed()};
@@ -61,8 +65,6 @@ $('dl').onclick=async()=>{
 };
 
 // notifiche push
-const isIOS=/iphone|ipad|ipod/i.test(navigator.userAgent)||(navigator.platform==='MacIntel'&&navigator.maxTouchPoints>1);
-const standalone=matchMedia('(display-mode: standalone)').matches||navigator.standalone===true;
 const pushOK='serviceWorker' in navigator&&'PushManager' in window&&'Notification' in window;
 let reg=null, sub=null;
 const b64=s=>{const p='='.repeat((4-s.length%4)%4);const r=atob((s+p).replace(/-/g,'+').replace(/_/g,'/'));return Uint8Array.from([...r].map(c=>c.charCodeAt(0)))};
@@ -76,7 +78,11 @@ function pushUI(){
 function warn(t){$('pwarn').innerHTML=t;$('pwarn').classList.toggle('hidden',!t)}
 async function initPush(){
   if(!location.protocol.startsWith('http')){warn('Le notifiche funzionano quando la pagina è online (su Netlify), non aprendo il file dal telefono.');$('pon').disabled=true;return}
-  if(isIOS&&!standalone){warn('<b>Su iPhone</b>: tocca <b>Condividi</b> → <b>Aggiungi alla schermata Home</b>, poi apri «Rifiuti» dalla schermata Home e attiva le notifiche da lì. Serve iOS 16.4 o successivo.');$('pon').disabled=true;$('pon').style.opacity=.5;return}
+  if(isIOS&&!standalone){
+    pushBlocked=true;
+    warn('Su iPhone le notifiche funzionano solo dall\'app aggiunta alla schermata Home. <a href="#" id="showGate" style="color:inherit;font-weight:700">Vedi come fare</a>');
+    $('showGate').onclick=e=>{e.preventDefault();try{sessionStorage.removeItem('ios-skip')}catch(_){}showGate(true)};
+    render();return}
   if(!pushOK){warn('Questo browser non supporta le notifiche. Prova con Chrome, oppure usa il calendario qui sotto.');$('pon').disabled=true;return}
   try{reg=await navigator.serviceWorker.register('sw.js');sub=await reg.pushManager.getSubscription()}catch(e){}
   if(Notification.permission==='denied') warn('Le notifiche sono bloccate per questo sito: riattivale dalle impostazioni del browser.');
@@ -104,5 +110,15 @@ $('pon').onclick=async()=>{
 };
 $('ptest').onclick=async()=>{$('pmsg').textContent='Invio…';try{await api('test',{subscription:sub.toJSON()});$('pmsg').textContent='✓ Inviata.'}catch(e){$('pmsg').textContent='Non riuscito: '+e.message}};
 $('poff').onclick=async()=>{try{await api('unsubscribe',{subscription:sub.toJSON()})}catch(e){} try{await sub.unsubscribe()}catch(e){} sub=null;pushUI();$('pmsg').textContent='Notifiche disattivate.'};
+
+// iPhone in Safari: prima l'installazione sulla schermata Home, poi la configurazione
+function showGate(on){
+  $('iosGate').classList.toggle('hidden',!on);
+  $('setup').classList.toggle('hidden',on);
+  if(on) window.scrollTo({top:0,behavior:'smooth'});
+}
+let skipped=false; try{skipped=sessionStorage.getItem('ios-skip')==='1'}catch(e){}
+if(isIOS&&!standalone&&!skipped) showGate(true);
+$('iosSkip').onclick=()=>{try{sessionStorage.setItem('ios-skip','1')}catch(e){} showGate(false)};
 
 render(); initPush();

@@ -64,12 +64,46 @@ select{width:130px;font:inherit;padding:10px 12px;border-radius:10px;border:1px 
 .src{display:flex;gap:12px;align-items:center}
 .src .ico{font-size:1.8rem}
 .src a{color:var(--acc);font-weight:700}
+
+.ios{border:2px solid var(--acc);background:color-mix(in srgb,var(--acc) 7%,var(--card))}
+.ios h2{color:var(--acc)}
+.ios .lead{font-size:1.05rem;font-weight:700;margin:0 0 6px}
+.steps{list-style:none;margin:12px 0;padding:0;counter-reset:s}
+.steps li{counter-increment:s;display:flex;gap:12px;align-items:flex-start;padding:9px 0;border-top:1px solid var(--line)}
+.steps li::before{content:counter(s);flex:none;width:28px;height:28px;border-radius:50%;background:var(--acc);color:#fff;font-weight:700;display:grid;place-items:center}
+.share{display:inline-grid;place-items:center;width:22px;height:22px;border:1.5px solid currentColor;border-radius:5px;font-size:.8rem;vertical-align:-4px;color:#2f80ed}
+.welcome{font-size:.95rem}
+.sec-title{font-size:.8rem;text-transform:uppercase;letter-spacing:.06em;color:var(--mut);font-weight:600;margin:22px 4px 8px}
+.opt h2{display:flex;justify-content:space-between;align-items:center;gap:8px}
+.badge{font-size:.7rem;letter-spacing:.02em;text-transform:none;background:var(--acc);color:#fff;border-radius:999px;padding:3px 9px;font-weight:700}
+.opt.alt{opacity:.95}
+.sign{margin-top:28px;padding-top:16px;border-top:1px solid var(--line);text-align:center}
+.sign .brand{font-weight:800;letter-spacing:.02em;color:var(--ink);font-size:.95rem}
+.sign .brand b{color:var(--acc)}
+.sign .meta{color:var(--mut);font-size:.78rem;margin-top:4px}
 </style>
 </head>
 <body>
 <main>
 <h1>🗑️ Rifiuti Trissino</h1>
 <p class="sub">Promemoria della sera prima, dal calendario 2026 di Agno Chiampo Ambiente.</p>
+
+<!-- Solo iPhone/iPad in Safari: va installata prima di configurare -->
+<section class="card ios hidden" id="iosGate">
+<h2>📱 Hai un iPhone? Inizia da qui</h2>
+<p class="lead">Per ricevere le notifiche, prima aggiungi questa pagina alla schermata Home.</p>
+<p class="note" style="margin:0">Fallo <b>prima</b> di scegliere zona e orario: le scelte fatte qui in Safari non passano all'app e dovresti ripeterle.</p>
+<ol class="steps">
+<li><span>Tocca il tasto <b>Condividi</b> <span class="share">↑</span> nella barra di Safari (in basso, o in alto su iPad).</span></li>
+<li><span>Scorri e tocca <b>Aggiungi alla schermata Home</b>, poi <b>Aggiungi</b>.</span></li>
+<li><span>Chiudi Safari e apri l'icona <b>Rifiuti</b> dalla schermata Home: lì scegli zona e orario e attiva le notifiche.</span></li>
+</ol>
+<p class="note">Serve iOS 16.4 o successivo (Impostazioni → Generali → Info).</p>
+<button class="btn sec" id="iosSkip">Non voglio le notifiche, continua in Safari</button>
+</section>
+
+<div id="setup">
+<section class="card welcome hidden" id="iosWelcome">✅ <b>App installata!</b> Ora scegli zona e orario, poi attiva le notifiche.</section>
 
 <section class="card">
 <h2>1 · La tua zona vetro</h2>
@@ -86,33 +120,37 @@ select{width:130px;font:inherit;padding:10px 12px;border-radius:10px;border:1px 
 <p class="note">I rifiuti vanno esposti dopo le 19:00 del giorno prima ed entro le 5:00 del giorno di raccolta.</p>
 </section>
 
-<section class="card" id="nextCard"></section>
+<div class="sec-title">3 · Come vuoi ricevere l'avviso?</div>
 
-<section class="card">
-<h2>3 · Notifiche sul telefono</h2>
+<section class="card opt">
+<h2><span>Opzione 1 · Notifiche sul telefono</span><span class="badge">Consigliata</span></h2>
 <div class="status" id="pstatus"><span class="led"></span><span id="ptext">Notifiche non attive</span></div>
 <div class="warn hidden" id="pwarn"></div>
 <button class="btn" id="pon">🔔 Attiva notifiche</button>
 <button class="btn sec hidden" id="ptest">Manda una notifica di prova</button>
 <button class="btn danger hidden" id="poff">Disattiva notifiche</button>
 <div class="msg" id="pmsg"></div>
-<p class="note">Ricevi un avviso all'orario scelto anche a pagina chiusa, come quello di un'app. Se cambi zona o orario, l'aggiornamento è automatico.</p>
+<p class="note">Un avviso all'orario scelto, anche a pagina chiusa, come quello di un'app. Se cambi zona o orario si aggiorna da solo.</p>
 </section>
 
-<section class="card">
-<h2>Oppure: nel calendario</h2>
+<section class="card opt alt">
+<h2><span>Opzione 2 · Eventi nel calendario</span></h2>
 <button class="btn sec" id="dl" style="margin-top:0">📅 Aggiungi gli avvisi al calendario</button>
 <div class="msg" id="msg"></div>
-<p class="note">In alternativa alle notifiche: un file con tutti gli avvisi della tua zona, da aprire con il calendario del telefono.</p>
+<p class="note">Se preferisci non usare le notifiche: un file con tutti gli avvisi della tua zona da aprire con il calendario del telefono, che ti avviserà all'orario scelto.</p>
 <details><summary>iPhone</summary><ol><li>Tocca il pulsante: si apre l'anteprima degli eventi.</li><li>Tocca «Aggiungi tutti» e scegli il calendario.</li></ol></details>
 <details><summary>Android</summary><ol><li>Tocca il pulsante e scarica il file.</li><li>Aprilo dalla notifica di download: scegli il calendario e importa.</li><li>Con Google Calendar: calendar.google.com da computer → Impostazioni → Importa ed esporta.</li></ol></details>
 <details><summary>Cambiare zona o orario</summary><p>Elimina gli eventi importati prima, scegli le nuove impostazioni e ripeti l'importazione.</p></details>
 </section>
 
+<div class="sec-title">Il tuo calendario</div>
+<section class="card" id="nextCard"></section>
+
 <section class="card">
 <h2>Prossime raccolte</h2>
 <ul class="list" id="list"></ul>
 </section>
+</div>
 
 <section class="card">
 <h2>Fonte</h2>
@@ -120,7 +158,10 @@ select{width:130px;font:inherit;padding:10px 12px;border-radius:10px;border:1px 
 <p class="note">Le date di questa pagina sono ricavate dal PDF. In caso di dubbi vale il calendario ufficiale. Numero verde 800 959 366.</p>
 </section>
 
-<footer>Rifiuti Trissino · calendario 2026 e prima settimana di gennaio 2027</footer>
+<footer class="sign">
+<div class="brand">Fai da <b>TU</b> · 2026</div>
+<div class="meta">Rifiuti Trissino · calendario 2026 e prima settimana di gennaio 2027</div>
+</footer>
 </main>
 
 <script type="module" src="app.mjs"></script>
